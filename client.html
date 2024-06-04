@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <!DOCTYPE html>
 <html>
 <head>
@@ -30,37 +29,3 @@
         });
     </script>
 </body>
-=======
-<!DOCTYPE html>
-<html>
-<head>
-    <title>KBC</title>
-</head>
-<body>
-    <h1>Welcome to the KBC Game!</h1>
-    
-    <form id="nameForm">
-        <label for="name">Enter your name:</label>
-        <input type="text" id="name" required>
-        <button type="submit">Start Game</button>
-    </form>
-
-    <script>
-        window.onload = function() {
-            var name = localStorage.getItem("username");
-            if (name) {
-                document.getElementById("name").value = name;
-            } else {
-                document.getElementById("name").value = "";
-            }
-        };
-        document.getElementById("nameForm").addEventListener("submit", function(event) {
-            event.preventDefault();
-            var name = document.getElementById("name").value;
-            localStorage.setItem("username", name);
-            window.location.href = "game";
-        });
-    </script>
-</body>
->>>>>>> 4d689dc (Initial commit)
-</html>
