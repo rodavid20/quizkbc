@@ -3,257 +3,279 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Game</title>
-    <!--Google Fonts and Icons-->
+    <title>Bible Brainiac Quiz</title>
     <link
-      href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Round|Material+Icons+Sharp|Material+Icons+Two+Tone"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Anek+Kannada:wght@400;700&display=swap" rel="stylesheet">  
     <style>
       body {
         width: 100%;
-        height: 100vh;
-        margin: 0;
-        padding: 0;
-        background: rgb(214, 104, 103);
-      }
-      .center {
-        width: 100%;
         height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        background-color: #4b0082;
+        color: white;
+        text-align: center;
+        font-family: 'Anek Kannada', sans-serif;
       }
       .container {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
+        background-image: url("/static/back.jpg");
+        background-repeat: cover;
+        background-size: 100% 100%;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
       }
-      .item {
-        width: 350px;
-        height: 60px;
-        box-sizing: border-box;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        background: white;
-        border-radius: 3mm;
+      .timer {
         margin: 10px 0;
-        cursor: grab;
-        box-shadow: rgba(0, 0, 0, 0.19) 0px 5px 10px,
-          rgba(0, 0, 0, 0.23) 0px 3px 3px;
-        transition: margin 0.25s;
+      }
+      .question {
+        width: 100%;
+        background-color: #7db15c;
+        padding: 10px;
+        border-radius: 10px;
+        margin: 10px 0;
+        font-weight: bolder;        
+      }
+      .avatar {
+        vertical-align: middle;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+      }
+      .options {
+        width: 350px;        
+        background-color: white;
+        color: black;
+        padding: 10px;
+        border-radius: 10px;
+        margin: 2px 0;
+        font-weight: bolder;
+        cursor: pointer;        
+      }      
+      .options.selected {
+        background-color: #7db15c;
+        color: white;
       }
       .button {
-        width: 350px;
-        height: 60px;
-        box-sizing: border-box;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        background: gray;
+        width: 350px;        
+        background-color:#7db15c;
         color: white;
-        border-radius: 3mm;
+        padding: 10px;
+        border-radius: 10px;
         margin: 10px 0;
-        cursor: pointer;
-        box-shadow: rgba(0, 0, 0, 0.19) 0px 5px 10px,
-          rgba(0, 0, 0, 0.23) 0px 3px 3px;
-        transition: margin 0.25s;
-        text-align: center;
-        font-family: poppins;
-        font-size: 18px;
-        font-weight: 500;
+        font-weight: bolder;
+        cursor: pointer;        
       }
-      .name {
-        width: 100%;
-        text-align: center;
-        font-family: poppins;
-        font-size: 18px;
-        font-weight: 500;
+      .questionContainer {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;        
       }
-      .item span {
-        position: absolute;
-        top: 50%;
-        right: 10px;
-        transform: translate(0, -50%);
-        font-size: 30px;
-        color: rgb(180, 180, 180);
+      
+      .timer.orange {
+        color: orange;
       }
-      .item.dragging {
-        position: absolute;
-        left: 50%;
-        transform: translate(-50%, 0) scale(1.15);
-        pointer-events: none;
-        z-index: 1000;
-      }
-      .insert-animation {
-        animation: scaleit 0.1s ease-in-out;
-      }
-      @keyframes scaleit {
-        from {
-          transform: translate(-50%, 0) scale(1);
-        }
-      }
-      .item.dragging .name {
-        color: rgb(218, 83, 80);
-      }
-      .item.dragging span {
-        color: rgb(214, 104, 103);
+      
+      .timer.red {
+        color: red;
       }
     </style>
   </head>
   <body>
-    <div>
-      <h1 style="color:white">Drag and drop the answers in the correct order</h1>
+    <div class="container">
+      <img
+        src="/static/logo.png"
+        alt="Bible Brainiac Logo"
+        class="img-fluid mx-auto d-block"
+        style="max-width: 150px"
+      />
+      <input type="hidden" id="gameSessionId" name="gameSessionId" />
+
+      <h3 style="font-weight: bolder" id="userName">TEAM NAME</h3>
+      <h6 id="gameSessionName">ROUND NAME</h6>
+      <h2><div class="timer" id="timer">00:00</div></h2>
+      <h4 style="color: lightgray" id="messages">Please Wait...</h4>
+      <div id="questionAnswers" class="questionContainer">
+        <div id="question" class="question">
+          ನಿಮ್ಮ ಮಕ್ಕಳನ್ನು ಇವುಗಳ ಮುಂದೆ ಬೆಳೆಸಿರಿ ನಿಮ್ಮ ಮಕ್ಕಳನ್ನು ಇವುಗಳ ಮುಂದೆ ಬೆಳೆಸಿರಿ ನಿಮ್ಮ ಮಕ್ಕಳನ್ನು ಇವುಗಳ ಮುಂದೆ ಬೆಳೆಸಿರಿ
+        </div>
+        <div class="options" id="option1" onclick="setSelection(0)">
+          Item 1
+        </div>
+        <div class="options" id="option2" onclick="setSelection(1)">
+          Item 2
+        </div>
+        <div class="options" id="option3" onclick="setSelection(2)">
+          Item 3
+        </div>
+        <div class="options" id="option4" onclick="setSelection(3)">
+          Item 4
+        </div>
+        <button onclick="submitQuestion(false)" class="button" id="btnSubmit">
+          Next
+        </button>
+      </div>
     </div>
-    <div>
-      <div class="container" id="answers">
-        <div class="item">
-          <div class="name" id="option1">Item 1</div>
-          <span class="material-icons-round">drag_indicator</span>
-        </div>
-        <div class="item">
-          <div class="name" id="option2">Item 2</div>
-          <span class="material-icons-round">drag_indicator</span>
-        </div>
-        <div class="item">
-          <div class="name" id="option3">Item 3</div>
-          <span class="material-icons-round">drag_indicator</span>
-        </div>
-        <div class="item">
-          <div class="name" id="option4">Item 4</div>
-          <span class="material-icons-round">drag_indicator</span>
-        </div>
-    </div>    
-    
-    <input type="text" id="username" placeholder="Enter your name"/>
-    <button onclick="submitQuestion()" class="button" id="btnSubmit">Submit</button>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      let isDragging = false;
-      let currentItem = null;
-      let containerOffsetY = 0;
-      let initY = 0;
+      let questions = [];
+      let currentQuestion = 0;
+      let result = {};
+      let startTime;
+      let userName;
+      let socket;
+      let timerInterval;
+      let warningThreshold;
+      let alertThreshold;
+      let timeLimit;  
 
-      const container = document.querySelector(".container");
-      container.style.width = container.offsetWidth + "px";
-      container.style.height = container.offsetHeight + "px";
+      const timerDiv = document.getElementById("timer");
+      const usernameDiv = document.getElementById("userName");
+      const questionAnswersDiv = document.getElementById("questionAnswers");
+      const btnSubmit = document.getElementById("btnSubmit");
+      const questionDiv = document.getElementById("question");
+      const option1 = document.getElementById("option1");
+      const option2 = document.getElementById("option2");
+      const option3 = document.getElementById("option3");
+      const option4 = document.getElementById("option4");
+      const gameSessionNameDiv = document.getElementById("gameSessionName");
+      const messagesDiv = document.getElementById("messages");
 
-      document.addEventListener("mousedown", (e) => {
-        const item = e.target.closest(".item");
-        if (item) {
-          isDragging = true;
-          currentItem = item;
-          containerOffsetY = currentItem.offsetTop;
-          currentItem.classList.add("dragging");
-          document.body.style.userSelect = "none";
-          currentItem.classList.add("insert-animation");
-          currentItem.style.top = containerOffsetY + "px";
-          initY = e.clientY;
+      window.onload = function () {
+        if (!localStorage.getItem("username")) {
+          window.location.href = "/client";
         }
-      });
-      document.addEventListener("mousemove", (e) => {
-        if (isDragging && currentItem) {
-          currentItem.classList.remove("insert-animation");
-          let newTop = containerOffsetY - (initY - e.clientY);
-          if (newTop < -50) {
-            newTop = -50;
-          } else if (newTop > container.offsetHeight - 30) {
-            newTop = container.offsetHeight - 30;
+        userName = localStorage.getItem("username");
+        usernameDiv.textContent = userName;
+        result.username = userName;
+        result.answers = [];
+        result.gameSessionId = "";
+        questionAnswersDiv.style.display = "none";
+        btnSubmit.setAttribute("disabled", "disabled");
+        socket = io({
+          transports: ["websocket"],
+          upgrade: false,
+          auth: { username: userName },
+        });
+        socket.on("begin_question", (gameData) => {
+          //console.log("Game Data:", gameData);
+          document.getElementById("gameSessionId").value =
+            gameData.gameSessionId;
+          result.gameSessionId = gameData.gameSessionId;
+          gameSessionNameDiv.textContent = gameData.gameSessionName;
+          questions = gameData.questions;
+          currentQuestion = 0;
+          messagesDiv.textContent = "Select the correct option and click next";
+          displayQuestion();
+          startTime = new Date().getTime();
+          timeLimit = gameData.timeLimit;
+          warningThreshold = gameData.warningThreshold;
+          alertThreshold = gameData.alertThreshold;
+          timerInterval = setInterval(updateTimer, 1000);
+        });
+
+        socket.on("end_question", () => {
+          questionAnswersDiv.style.display = "none";
+          btnSubmit.setAttribute("disabled", "disabled");
+        });
+      };
+
+      function submitQuestion(forceSubmit) {
+        const items = document.querySelectorAll(".options");
+        let selectedOption = -1;
+        items.forEach((item, index) => {
+          if (item.classList.contains('selected')) {
+            selectedOption = index + 1;
           }
-          currentItem.style.top = newTop + "px";
-
-          let itemSibilings = [
-            ...document.querySelectorAll(".item:not(.dragging)"),
-          ];
-          let nextItem = itemSibilings.find((sibiling) => {
-            return (
-              e.clientY - container.getBoundingClientRect().top <=
-              sibiling.offsetTop + sibiling.offsetHeight / 2
-            );
-          });
-
-          itemSibilings.forEach((sibiling) => {
-            sibiling.style.marginTop = "10px";
-          });
-
-          if (nextItem) {
-            nextItem.style.marginTop = currentItem.offsetHeight + 20 + "px";
-          }
-          container.insertBefore(currentItem, nextItem);
+        });
+        if (selectedOption < 0 && forceSubmit == false) {
+          return;
         }
-      });
-
-      document.addEventListener("mouseup", () => {
-        if (currentItem) {
-          currentItem.classList.remove("dragging");
-          currentItem.style.top = "auto";
-          currentItem = null;
-          isDragging = false;
-
-          document.body.style.userSelect = "auto";
+        result.answers[currentQuestion] = selectedOption;
+        if (currentQuestion == questions.length - 1 || forceSubmit == true) {
+          result.clientTime = (new Date().getTime() - startTime) / 1000;
+          stopTimer();
+          questionAnswersDiv.style.display = "none";
+          btnSubmit.setAttribute("disabled", "disabled");
+          messagesDiv.textContent = "Submitting answers...";
+          //console.log(result);
+          socket.volatile.emit("submit_result", result);
+        } else {
+          currentQuestion++;
+          displayQuestion();
         }
+      }
 
-        let itemSibilings = [
-          ...document.querySelectorAll(".item:not(.dragging)"),
-        ];
+      function displayQuestion() {
+        //console.log("Questions:", questions);
+        if (currentQuestion < questions.length) {
+          const question = questions[currentQuestion];
+          questionDiv.textContent = question.text;
+          option1.textContent = question.option1;
+          option2.textContent = question.option2;
+          option3.textContent = question.option3;
+          option4.textContent = question.option4;
+          setSelection(-1);
+          questionAnswersDiv.style.display = "flex";
+          messagesDiv.textContent =
+            "Question " + (currentQuestion + 1) + " of " + questions.length;
+          btnSubmit.textContent =
+            currentQuestion == questions.length - 1 ? "Submit" : "Next";
+          btnSubmit.removeAttribute("disabled");
+        } else {
+          questionAnswersDiv.style.display = "none";
+          btnSubmit.setAttribute("disabled", "disabled");
+        }
+      }
 
-        itemSibilings.forEach((sibiling) => {
-          sibiling.style.marginTop = "10px";
+      function setSelection(option) {
+        const items = document.querySelectorAll(".options");
+        items.forEach((item) => {
+          //remove class
+          item.classList.remove("selected");
         });
-      });
-      const socket = io({transports: ['websocket'], upgrade: false});
-      const username = document.getElementById("username");
-      const answersDiv = document.getElementById('answers');
-      const btnSubmit = document.getElementById('btnSubmit');
+        if (option >= 0) {
+          items[option].classList.add("selected");
+        }
+      }
 
-        const option1 = document.getElementById('option1');
-        const option2 = document.getElementById('option2');
-        const option3 = document.getElementById('option3');
-        const option4 = document.getElementById('option4');
+      function onTimesUp() {
+        stopTimer();
+        submitQuestion(true);        
+      }
+      
+      function stopTimer() {
+        clearInterval(timerInterval);
+        timerDiv.classList.remove('red');
+        timerDiv.classList.remove('orange');
+      }
 
-        socket.on('begin_question', (question) => {
-            btnSubmit.removeAttribute('disabled');
-            answersDiv.style.display = 'block';
-            option1.textContent = question.option1;
-            option2.textContent = question.option2;
-            option3.textContent = question.option3;
-            option4.textContent = question.option4;
-        });
+      function updateTimer() {
+        var delta = new Date().getTime() - startTime;
+        timePassed = Math.floor(delta / 1000);
+        timeLeft = timeLimit - timePassed;
+        timerDiv.innerHTML = formatTime(timeLeft);        
+        if (timeLeft <= 0) {
+          onTimesUp();
+        } else if(timeLeft <= alertThreshold) {
+          timerDiv.classList.remove('orange');
+          timerDiv.classList.add('red');
+        } else if(timeLeft <= warningThreshold) {
+          timerDiv.classList.add('orange');
+        }        
+      }
 
-        socket.on('end_question', () => {
-            answersDiv.style.display = 'none';
-            btnSubmit.setAttribute('disabled', 'disabled');
-        });
-
-        username.value = localStorage.getItem('username') || '';
-
-        window.onload = function() {
-          answersDiv.style.display = 'none';
-          btnSubmit.setAttribute('disabled', 'disabled');
-        };
-
-        function submitQuestion() {
-          answersDiv.style.display = 'none';
-          const items = document.querySelectorAll(".item");
-          const result = Object();
-          result.username = username.value;
-          result.answers = [];
-          items.forEach((item) => {
-              result.answers.push(item.querySelector(".name").getAttribute("id"));
-          });
-          console.log(result);
-          socket.volatile.emit('submit_result', result);
-      }    
+      function formatTime(time) {
+        const minutes = Math.floor(time / 60);
+        let seconds = time % 60;
+        if (seconds < 10) {
+          seconds = `0${seconds}`;
+        }
+        return `${minutes}:${seconds}`;
+      }
     </script>
   </body>
+</html>

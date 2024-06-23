@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Game Sessions</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+      th,
+      td {
+        min-width: 150px; /* Adjust this value as needed */
+      }
+      .accordion-body {
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1 class="mb-4">
+        Game Sessions
+        <button
+          class="btn btn-primary mb-3 float-end"
+          onclick="window.location.href = '/create-questions'"
+        >
+          Create Game Session
+        </button>
+      </h1>
+
+      <div id="accordionGameSessions" class="accordion">
+        <!-- Game sessions will be loaded here dynamically -->
+      </div>
+    </div>
+
+    <script>
+      window.onload = function () {
+        fetch("/api/game-sessions")
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(
+                "Network response was not ok: " + response.statusText
+              );
+            }
+            return response.json();
+          })
+          .then((sessions) => {
+            const container = document.getElementById("accordionGameSessions");
+            if (sessions.length === 0) {
+              container.innerHTML = "<p>No game sessions available.</p>";
+            } else {
+              sessions.forEach((session, index) => {
+                const sessionDiv = document.createElement("div");
+                sessionDiv.className = "accordion-item";
+                sessionDiv.innerHTML = `
+                            <h2 class="accordion-header" id="heading${index}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${index}" aria-expanded="true" aria-controls="collapse${index}">
+                                    ${session.name} ${
+                  session.startTime
+                    ? "(" +
+                      new Date(session.startTime).toLocaleString("en-GB") +
+                      ")"
+                    : ""
+                } </button>
+                            </h2>
+                            <div id="collapse${index}" class="accordion-collapse collapse"  aria-labelledby="heading${index}" data-bs-parent="#accordionGameSessions">
+                                <div class="accordion-body">                                    
+                                    ${
+                                      !session.startTime
+                                        ? `
+                                    <button class="btn btn-primary float-end ms-2" onclick="window.location.href = '/begin-game?gameSessionId=${session.sessionId}'">
+                                        Begin Game
+                                    </button>
+                                    <button class="btn btn-light float-end" onclick="window.location.href = '/create-questions?gameSessionId=${session.sessionId}'">
+                                        Edit Questions
+                                    </button>`
+                                        : ""
+                                    }                                    
+                                    <h4>Questions</h4>
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Question</th>
+                                                <th>Option 1</th>
+                                                <th>Option 2</th>
+                                                <th>Option 3</th>
+                                                <th>Option 4</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${session.Questions.map(
+                                              (q) => `
+                                                <tr>
+                                                    <td class="text-wrap">${
+                                                      q.text
+                                                    }</td>
+                                                    <td class="text-wrap">${
+                                                      q.option1
+                                                    }${
+                                                q.correctOption == 1
+                                                  ? ` <b class='text-danger'>*</b>`
+                                                  : ""
+                                              }</td>
+                                                    <td class="text-wrap">${
+                                                      q.option2
+                                                    }${
+                                                q.correctOption == 2
+                                                  ? ` <b class='text-danger'>*</b>`
+                                                  : ""
+                                              }</td>
+                                                    <td class="text-wrap">${
+                                                      q.option3
+                                                    }${
+                                                q.correctOption == 3
+                                                  ? ` <b class='text-danger'>*</b>`
+                                                  : ""
+                                              }</td>
+                                                    <td class="text-wrap">${
+                                                      q.option4
+                                                    }${
+                                                q.correctOption == 4
+                                                  ? ` <b class='text-danger'>*</b>`
+                                                  : ""
+                                              }</td>
+                                                </tr>
+                                            `
+                                            ).join("")}
+                                        </tbody>
+                                    </table>
+                                    <h4>Results</h4>
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Player Name</th>
+                                                <th>Score</th>
+                                                <th>Client Time</th>
+                                                <th>Server Time</th>                                                
+                                                <th>Choice</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${session.PlayerSessions.map(
+                                              (ps) => `
+                                                <tr>
+                                                    <td>${ps.playerName}</td>
+                                                    <td>${ps.score}</td>
+                                                    <td>${ps.clientTime}</td>
+                                                    <td>${ps.serverTime}</td>
+                                                    <td>${ps.choice}</td>                                                    
+                                                </tr>
+                                            `
+                                            ).join("")}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        `;
+                container.appendChild(sessionDiv);
+              });
+            }
+          })
+          .catch((err) => {
+            console.error("Failed to load game sessions:", err);
+            const container = document.getElementById("accordionGameSessions");
+            container.innerHTML = `<p>Error loading sessions: ${err.message}</p>`;
+          });
+      };
+    </script>
+  </body>
+</html>

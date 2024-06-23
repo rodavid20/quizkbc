@@ -1,0 +1,351 @@
+const express = require("express");
+const { createServer } = require("node:http");
+const { join } = require("node:path");
+const { Server } = require("socket.io");
+const { sequelize, GameSession, Question, PlayerSession } = require("./models");
+
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+const server = createServer(app);
+const io = new Server(server, {
+  transports: ["websocket"],
+});
+
+const port = process.env.PORT || 3000;
+const path = require("path");
+
+let connectedUsers = [];
+let serverStartTime; //only one game at a time
+let serverGameData = {};
+const warningThreshold = 10;
+const alertThreshold = 5;
+const timeLimit = 20;      
+
+app.use("/static", express.static(path.join(__dirname, "public")));
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send("Something broke!");
+});
+
+app.get("/admin", (req, res) => {
+  res.sendFile(join(__dirname, "admin.html"));
+});
+
+app.get("/client", (req, res) => {
+  res.sendFile(join(__dirname, "client.html"));
+});
+
+app.get("/game", (req, res) => {
+  res.sendFile(join(__dirname, "game.html"));
+});
+
+app.get("/create-question", (req, res) => {
+  res.sendFile(join(__dirname, "question.html"));
+});
+
+app.get("/begin-game", (req, res) => {
+  res.sendFile(join(__dirname, "begin-game.html"));
+});
+
+app.get("/game-sessions", (req, res) => {
+  res.sendFile(join(__dirname, "game-sessions.html"));
+});
+
+app.get("/api/game-sessions", async (req, res) => {
+  try {
+    const gameSessions = await GameSession.findAll({
+      include: [                
+        {
+          model: PlayerSession,
+          attributes: [
+            "playerName",
+            "choice",
+            "score",
+            "clientTime",
+            "serverTime",
+          ],
+        },
+        {
+          model: Question,
+          attributes: [
+            "text",
+            "option1",
+            "option2",
+            "option3",
+            "option4",
+            "correctOption",
+          ],
+        },
+      ],
+      order: [["name", "ASC"]],
+    });
+    res.json(gameSessions);
+  } catch (error) {
+    console.error("Failed to fetch game sessions:", error);
+    res.status(500).send("Failed to fetch game sessions");
+  }
+});
+
+app.get("/create-questions", (req, res) => {
+  // Check if there is a gameSessionId provided
+  const { gameSessionId } = req.query;
+
+  if (!gameSessionId) {
+    // Create a new game session if none provided
+    GameSession.create()
+      .then((session) => {
+        const url = `/create-questions?gameSessionId=${session.sessionId}`;
+        res.redirect(url); // Redirect to the same page with the new session ID
+      })
+      .catch((err) => {
+        res.status(500).send("Failed to create a new game session.");
+      });
+  } else {
+    // Serve the HTML page with the session ID
+    res.sendFile(__dirname + `/create-questions.html`);
+  }
+});
+
+app.get("/api/questions/:gameSessionId", async (req, res) => {
+  const { gameSessionId } = req.params;
+  console.log("Fetching questions for game session:", gameSessionId);
+  try {
+    const gameSession = await GameSession.findByPk(gameSessionId, {
+      attributes: ["startTime", "name"],
+      include: [Question],
+    });
+    if (gameSession) {
+      //console.log("Questions:", gameSession);
+      res.json({
+        gameSessionId: gameSessionId,
+        gameSessionName: gameSession.name,
+        questions: gameSession.Questions,
+        alertThreshold: alertThreshold,
+        warningThreshold: warningThreshold,
+        timeLimit: timeLimit,
+      });
+    } else {
+      res.json({});
+    }
+  } catch (error) {
+    console.error("Failed to fetch questions:", error);
+    res.status(500).send("Failed to fetch questions");
+  }
+});
+
+app.post("/api/create-questions", async (req, res) => {
+  const { gameSessionId, gameSessionName, questions } = req.body;
+  //console.log('Updating questions:', req.body, gameSessionId);
+  try {
+    let gameSession;
+    if (!gameSessionId) {
+      gameSession = await GameSession.create({ name: gameSessionName });
+    } else {
+      gameSession = await GameSession.findByPk(gameSessionId);
+      gameSession.name = gameSessionName;
+      //gameSession.startTime = new Date();     //keep date as null and when game starts update it to new Date()
+      gameSession.save();
+      if (!gameSession) return res.status(404).send("Game session not found");
+    }
+    //console.log('Creating questions:', questions, gameSessionId, gameSessionName);
+
+    const result = await Question.destroy({
+      where: {
+        sessionId: gameSessionId,
+      },
+    });
+
+    const createdQuestions = await Question.bulkCreate(
+      questions.map((question) => ({
+        text: question.text,
+        option1: question.options[0],
+        option2: question.options[1],
+        option3: question.options[2],
+        option4: question.options[3],
+        correctOption: question.correctOption,
+        sessionId: gameSessionId,
+      })),
+      {
+        validate: true, // This ensures validations defined in the model are applied
+      }
+    );
+    res
+      .status(201)
+      .json({
+        message: `${createdQuestions.length} questions created successfully`,
+        gameSessionId: gameSessionId,
+      });
+  } catch (error) {
+    console.error("Error creating questions:", error);
+    res.status(500).send("Failed to create questions");
+  }
+});
+
+io.on("connection", (socket) => {
+  connectedUsers.push(socket.handshake.auth.username);
+  io.emit("connected_users", connectedUsers);
+  console.log("a user connected");
+  socket.on("disconnect", () => {
+    console.log("user disconnected");
+    connectedUsers = connectedUsers.filter(
+      (user) => user !== socket.handshake.auth.username
+    );
+    io.emit("connected_users", connectedUsers);
+  });
+  socket.on("start_question", (gameData) => {
+    serverGameData = gameData;
+    gameData.timeLimit = timeLimit;
+    gameData.warningThreshold = warningThreshold;
+    gameData.alertThreshold = alertThreshold;
+    serverStartTime = new Date().getTime();
+    io.emit("begin_question", gameData);
+  });
+
+  socket.on("stop_question", (gameData) => {
+    io.emit("end_question", gameData);
+  });
+
+  socket.on("submit_result", async (result) => {
+    const serverTime = (new Date().getTime() - serverStartTime) / 1000;
+    result.serverTime = serverTime;
+    try {
+      let gameSession = await GameSession.findByPk(result.gameSessionId);
+      if (!gameSession) return res.status(404).send("Game session not found");
+      if(gameSession.startTime == null) {
+        gameSession.startTime = serverStartTime;
+        await gameSession.save();
+      }
+      let score = 0;
+      for (let i = 0; i < result.answers.length; i++) {
+        if (result.answers[i] == serverGameData.questions[i].correctOption) {
+          score++;
+        }
+      }
+      if (serverTime > timeLimit) {
+        result.serverTime = timeLimit;
+      }
+      if(result.clientTime > timeLimit) {
+        result.clientTime = timeLimit;
+      }
+      result.score = score;
+      //console.log("Updating results:", result);
+      await PlayerSession.create({
+        sessionId: result.gameSessionId,
+        playerName: result.username,
+        choice: result.answers.toString(),
+        score: result.score,
+        clientTime: result.clientTime,
+        serverTime: serverTime,
+      });
+    } catch (error) {
+      console.error("Error:", result);
+      console.error("Error saving results:", error);
+    }
+    io.emit("recieved_result", result);
+  });
+});
+
+server.listen(port, async () => {
+  console.log(`server running at port ${port}`);
+  try {
+    await sequelize.authenticate();
+    console.log("Database connected!");
+    await sequelize.sync({ force: false, alter: false }); // Optionally, consider 'alter: true' if you want to make non-destructive updates to the schema
+    console.log("Database models synchronized!");
+  } catch (error) {
+    console.error("Unable to connect to the database:", error);
+  }
+});
+
+// app.post('/api/update-questions/:gameSessionId', async (req, res) => {
+//   const { gameSessionId } = req.params;
+//   const { questions } = req.body;
+//   console.log('Updating questions:', questions);
+
+//   try {
+//       const gameSession = await GameSession.findByPk(gameSessionId);
+//       if (!gameSession) {
+//           return res.status(404).send('Game session not found');
+//       }
+
+//       await Promise.all(questions.map(question =>
+//           Question.update({
+//               text: question.text,
+//               option1: question.options[0],
+//               option2: question.options[1],
+//               option3: question.options[2],
+//               option4: question.options[3],
+//               correctOption: question.correctOption
+//           }, {
+//               where: { questionId: question.id, sessionId: gameSessionId }
+//           })
+//       ));
+
+//       res.status(200).json({ message: 'Questions updated successfully' });
+//   } catch (error) {
+//       console.error('Error updating questions:', error);
+//       res.status(500).send('Failed to update questions');
+//   }
+// });
+
+// app.post('/submit-edited-questions/:sessionId', async (req, res) => {
+//   try {
+//       const { questions } = req.body;
+//       for (const question of questions) {
+//           const q = await Question.findByPk(question.id);
+//           if (q) {
+//               q.text = question.text;
+//               q.option1 = question.options[0];
+//               q.option2 = question.options[1];
+//               q.option3 = question.options[2];
+//               q.option4 = question.options[3];
+//               q.correctOption = parseInt(question.correctOption, 10) + 1; // Assuming 0-indexed front-end
+//               await q.save();
+//           }
+//       }
+//       res.status(200).send('Questions updated successfully');
+//     } catch (error) {
+//       console.error('Error updating questions:', error);
+//       res.status(500).send('Failed to update questions');
+//     }
+// });
+
+// app.post('/submit-questions', async (req, res) => {
+//   const questionsData = req.body.questions;
+//   const gameSessionId = req.body.gameSessionId;
+
+//   if (!Array.isArray(questionsData) || questionsData.length === 0) {
+//     return res.status(400).send({
+//       message: 'Invalid input: Expected an array of questions.'
+//     });
+//   }
+//   try {
+//     console.log('Creating questions:', questionsData);
+//     const gameSession = await GameSession.findByPk(gameSessionId);
+//     gameSession.gameSessionName = req.body.gameSessionName;
+//     const questions = await Question.bulkCreate(questionsData.map(question => ({
+//       text: question.text,
+//       option1: question.options[0],
+//       option2: question.options[1],
+//       option3: question.options[2],
+//       option4: question.options[3],
+//       correctOption: parseInt(question.correctOption, 0) + 1,
+//       sessionId: gameSessionId
+//     })), {
+//       validate: true // This ensures validations defined in the model are applied
+//     });
+//     res.status(201).json({
+//       message: `${questions.length} questions created successfully`,
+//       questions
+//     });
+//   } catch (error) {
+//     console.error('Error saving questions:', error);
+//     res.status(500).json({
+//       message: "Failed to create questions",
+//       error: error.message || 'Database error'
+//     });
+//   }
+// });
