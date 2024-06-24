@@ -119,6 +119,10 @@ PlayerSession.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    clientActualTime: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     serverTime: {
       type: DataTypes.STRING,
       allowNull: false,

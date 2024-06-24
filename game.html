@@ -177,10 +177,10 @@
           timerInterval = setInterval(updateTimer, 1000);
         });
 
-        socket.on("end_question", () => {
-          questionAnswersDiv.style.display = "none";
-          btnSubmit.setAttribute("disabled", "disabled");
-        });
+        // socket.on("end_question", () => {
+        //   questionAnswersDiv.style.display = "none";
+        //   btnSubmit.setAttribute("disabled", "disabled");
+        // });
       };
 
       function submitQuestion(forceSubmit) {

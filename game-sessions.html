@@ -68,17 +68,20 @@
                             </h2>
                             <div id="collapse${index}" class="accordion-collapse collapse"  aria-labelledby="heading${index}" data-bs-parent="#accordionGameSessions">
                                 <div class="accordion-body">                                    
-                                    ${
+                                  ${
                                       !session.startTime
                                         ? `
                                     <button class="btn btn-primary float-end ms-2" onclick="window.location.href = '/begin-game?gameSessionId=${session.sessionId}'">
                                         Begin Game
                                     </button>
-                                    <button class="btn btn-light float-end" onclick="window.location.href = '/create-questions?gameSessionId=${session.sessionId}'">
+                                    <button class="btn btn-secondary float-end  ms-2" onclick="window.location.href = '/create-questions?gameSessionId=${session.sessionId}'">
                                         Edit Questions
                                     </button>`
                                         : ""
-                                    }                                    
+                                    }   
+                                    <button class="btn btn-secondary float-end" onclick="copyQuestions('${session.sessionId}');">
+                                        Copy Questions to New Game
+                                    </button>                                     
                                     <h4>Questions</h4>
                                     <table class="table table-striped">
                                         <thead>
@@ -168,6 +171,27 @@
             container.innerHTML = `<p>Error loading sessions: ${err.message}</p>`;
           });
       };
+
+      function copyQuestions(gameSessionId) {
+        fetch(`/api/copy-questions?gameSessionId=${gameSessionId}`)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(
+                "Network response was not ok: " + response.statusText
+              );
+            }
+            return response.json();
+          })
+          .then((result) => {
+            if (result) {
+              location.reload();
+            }
+          })
+          .catch((err) => {
+            console.error("Failed to copy questions:", err);
+            alert("Failed to copy questions: " + err.message);
+          });
+      }
     </script>
   </body>
 </html>

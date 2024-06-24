@@ -21,7 +21,7 @@ let serverStartTime; //only one game at a time
 let serverGameData = {};
 const warningThreshold = 10;
 const alertThreshold = 5;
-const timeLimit = 20;      
+const timeLimit = 20;
 
 app.use("/static", express.static(path.join(__dirname, "public")));
 
@@ -57,7 +57,7 @@ app.get("/game-sessions", (req, res) => {
 app.get("/api/game-sessions", async (req, res) => {
   try {
     const gameSessions = await GameSession.findAll({
-      include: [                
+      include: [
         {
           model: PlayerSession,
           attributes: [
@@ -109,6 +109,43 @@ app.get("/create-questions", (req, res) => {
   }
 });
 
+app.get("/api/copy-questions", async (req, res) => {
+  const { gameSessionId } = req.query;
+  try {
+    const gameSession = await GameSession.findByPk(gameSessionId, {
+      include: [Question],
+    });
+    if (!gameSession) {
+      return res.status(404).send("Game session not found");
+    }
+    let newGameSession = await GameSession.create({
+      name: gameSession.name + "-Copy",
+    });
+    //console.log("Copying questions for game session:", gameSession.Questions);
+    const createdQuestions = await Question.bulkCreate(
+      gameSession.Questions.map((question) => ({
+        text: question.text,
+        option1: question.option1,
+        option2: question.option2,
+        option3: question.option3,
+        option4: question.option4,
+        correctOption: question.correctOption,
+        sessionId: newGameSession.sessionId,
+      })),
+      {
+        validate: true, // This ensures validations defined in the model are applied
+      }
+    );
+    res.json({
+      message: `${createdQuestions.length} questions created successfully`,
+      gameSessionId: newGameSession.gameSessionId,
+    });
+  } catch (error) {
+    console.error("Failed to copy questions:", error);
+    res.status(500).send("Failed to copy questions");
+  }
+});
+
 app.get("/api/questions/:gameSessionId", async (req, res) => {
   const { gameSessionId } = req.params;
   console.log("Fetching questions for game session:", gameSessionId);
@@ -122,6 +159,7 @@ app.get("/api/questions/:gameSessionId", async (req, res) => {
       res.json({
         gameSessionId: gameSessionId,
         gameSessionName: gameSession.name,
+        gameStartTime: gameSession.startTime,
         questions: gameSession.Questions,
         alertThreshold: alertThreshold,
         warningThreshold: warningThreshold,
@@ -172,12 +210,10 @@ app.post("/api/create-questions", async (req, res) => {
         validate: true, // This ensures validations defined in the model are applied
       }
     );
-    res
-      .status(201)
-      .json({
-        message: `${createdQuestions.length} questions created successfully`,
-        gameSessionId: gameSessionId,
-      });
+    res.status(201).json({
+      message: `${createdQuestions.length} questions created successfully`,
+      gameSessionId: gameSessionId,
+    });
   } catch (error) {
     console.error("Error creating questions:", error);
     res.status(500).send("Failed to create questions");
@@ -214,7 +250,7 @@ io.on("connection", (socket) => {
     try {
       let gameSession = await GameSession.findByPk(result.gameSessionId);
       if (!gameSession) return res.status(404).send("Game session not found");
-      if(gameSession.startTime == null) {
+      if (gameSession.startTime == null) {
         gameSession.startTime = serverStartTime;
         await gameSession.save();
       }
@@ -224,13 +260,12 @@ io.on("connection", (socket) => {
           score++;
         }
       }
-      if (serverTime > timeLimit) {
-        result.serverTime = timeLimit;
-      }
-      if(result.clientTime > timeLimit) {
+      result.score = score;
+      result.serverTime = serverTime;
+      result.clientActualTime = result.clientTime;      
+      if (result.clientTime > timeLimit) {
         result.clientTime = timeLimit;
       }
-      result.score = score;
       //console.log("Updating results:", result);
       await PlayerSession.create({
         sessionId: result.gameSessionId,
@@ -238,8 +273,10 @@ io.on("connection", (socket) => {
         choice: result.answers.toString(),
         score: result.score,
         clientTime: result.clientTime,
+        clientActualTime: result.clientActualTime,
         serverTime: serverTime,
       });
+      
     } catch (error) {
       console.error("Error:", result);
       console.error("Error saving results:", error);
