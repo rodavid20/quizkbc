@@ -16,7 +16,10 @@
                 <input type="text" name="gameSessionName" id="gameSessionName" class="form-control" required aria-label="Game Name">
             </div>
             <div id="questions" class="mb-3"></div>
-            <button type="button" onclick="submitForm()" class="btn btn-primary">Submit Questions</button>
+            <div>
+                <button type="button" onclick="window.location.href = '/game-sessions'" class="btn btn-secondary">Cancel Changes</button> <button type="button" onclick="submitForm()" class="btn btn-primary">Submit Changes</button>
+            </div>
+            
         </form>
     </div>
     
