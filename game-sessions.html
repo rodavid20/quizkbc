@@ -52,10 +52,10 @@
             if (sessions.length === 0) {
               container.innerHTML = "<p>No game sessions available.</p>";
             } else {
-              sessions.forEach((session, index) => {
+              sessions.forEach((session, index) => {                
                 const sessionDiv = document.createElement("div");
                 sessionDiv.className = "accordion-item";
-                sessionDiv.innerHTML = `
+                let divContent = `
                             <h2 class="accordion-header" id="heading${index}">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${index}" aria-expanded="true" aria-controls="collapse${index}">
                                     ${session.name} ${
@@ -69,17 +69,19 @@
                             <div id="collapse${index}" class="accordion-collapse collapse"  aria-labelledby="heading${index}" data-bs-parent="#accordionGameSessions">
                                 <div class="accordion-body">                                    
                                   ${
-                                      !session.startTime
-                                        ? `
+                                    !session.startTime
+                                      ? `
                                     <button class="btn btn-primary float-end ms-2" onclick="window.location.href = '/begin-game?gameSessionId=${session.sessionId}'">
                                         Begin Game
                                     </button>
                                     <button class="btn btn-secondary float-end  ms-2" onclick="window.location.href = '/create-questions?gameSessionId=${session.sessionId}'">
                                         Edit Questions
                                     </button>`
-                                        : ""
-                                    }   
-                                    <button class="btn btn-secondary float-end" onclick="copyQuestions('${session.sessionId}');">
+                                      : ""
+                                  }                                         
+                                    <button class="btn btn-secondary float-end" onclick="copyQuestions('${
+                                      session.sessionId
+                                    }');">
                                         Copy Questions to New Game
                                     </button>                                     
                                     <h4>Questions</h4>
@@ -133,7 +135,17 @@
                                             ).join("")}
                                         </tbody>
                                     </table>
-                                    <h4>Results</h4>
+                        `;
+
+                        console.log(session.PlayerSessions.length);
+                        if (session.PlayerSessions.length > 0) {
+                          const playerSessions = session.PlayerSessions.sort((a, b) => {
+                            if (a.score === b.score) {
+                              return a.clientTime - b.clientTime;
+                            }
+                            return b.score - a.score;
+                          });
+                          divContent += `<h4>Results</h4>
                                     <table class="table table-striped">
                                         <thead>
                                             <tr>
@@ -145,7 +157,7 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            ${session.PlayerSessions.map(
+                                            ${playerSessions.map(
                                               (ps) => `
                                                 <tr>
                                                     <td>${ps.playerName}</td>
@@ -157,10 +169,14 @@
                                             `
                                             ).join("")}
                                         </tbody>
-                                    </table>
+                                    </table>                                    
                                 </div>
-                            </div>
-                        `;
+                            </div>`;
+                        } else {
+                          divContent += `</div>
+                            </div>`;
+                        }
+                sessionDiv.innerHTML = divContent;
                 container.appendChild(sessionDiv);
               });
             }

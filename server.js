@@ -1,19 +1,71 @@
 const express = require("express");
+const fs = require("fs");
 const { createServer } = require("node:http");
 const { join } = require("node:path");
 const { Server } = require("socket.io");
 const { sequelize, GameSession, Question, PlayerSession } = require("./models");
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const session = require('express-session');
+
+//https://itnext.io/node-express-letsencrypt-generate-a-free-ssl-certificate-and-run-an-https-server-in-5-minutes-a730fbe528ca
+// const https = require('https');
+
+// // Certificate
+// const privateKey = fs.readFileSync('/etc/letsencrypt/live/srv550727.hstgr.cloud/privkey.pem', 'utf8');
+// const certificate = fs.readFileSync('/etc/letsencrypt/live/srv550727.hstgr.cloud/cert.pem', 'utf8');
+// const ca = fs.readFileSync('/etc/letsencrypt/live/srv550727.hstgr.cloud/fullchain.pem', 'utf8');
+
+// const credentials = {
+// 	key: privateKey,
+// 	cert: certificate,
+// 	ca: ca
+// };
 
 const app = express();
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false }));
+
+// Session middleware
+app.use(session({
+  secret: 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { maxAge: null }
+}));
+
+// Initialize Passport and session support
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Configure the local strategy for use by Passport
+passport.use(new LocalStrategy((username, password, done) => {
+  // Replace this with your user authentication logic
+  if (username === 'kevin' && password === 'Kevin@123') {
+    return done(null, { id: 1, username: 'user' });
+  }
+  return done(null, false, { message: 'Invalid credentials' });
+}));
+
+// Serialize user to the session
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+// Deserialize user from the session
+passport.deserializeUser((id, done) => {
+  // Replace this with your user retrieval logic
+  done(null, { id: 1, username: 'user' });
+});
 
 const server = createServer(app);
+//const server = https.createServer(credentials, app);
 const io = new Server(server, {
   transports: ["websocket"],
 });
 
 const port = process.env.PORT || 3000;
+//const port = process.env.PORT || 443;
 const path = require("path");
 
 let connectedUsers = [];
@@ -25,13 +77,53 @@ const timeLimit = 20;
 
 app.use("/static", express.static(path.join(__dirname, "public")));
 
+// Route for the login page
+app.get('/login', (req, res) => {
+  res.send(`
+    <form action="/login" method="post">
+      <div>
+        <label>Username:</label>
+        <input type="text" name="username"/>
+      </div>
+      <div>
+        <label>Password:</label>
+        <input type="password" name="password"/>
+      </div>
+      <div>
+        <input type="submit" value="Log In"/>
+      </div>
+    </form>
+  `);
+});
+
+app.post('/login',
+  (req, res, next) => {
+    passport.authenticate('local', (err, user, info) => {
+      //console.log('Authenticating user:', err);
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.redirect('/login');
+      }
+      req.logIn(user, (err) => {
+       return res.redirect('/admin');
+      });
+    })(req, res, next);
+  }
+);
+
+// Middleware to protect routes and store original URL
+const ensureAuthenticated = (req, res, next) => {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect('/login');
+};
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send("Something broke!");
-});
-
-app.get("/admin", (req, res) => {
-  res.sendFile(join(__dirname, "admin.html"));
 });
 
 app.get("/client", (req, res) => {
@@ -42,15 +134,19 @@ app.get("/game", (req, res) => {
   res.sendFile(join(__dirname, "game.html"));
 });
 
-app.get("/create-question", (req, res) => {
+app.get("/results", ensureAuthenticated, (req, res) => {
+  res.sendFile(join(__dirname, "results.html"));
+});
+
+app.get("/create-question", ensureAuthenticated, (req, res) => {
   res.sendFile(join(__dirname, "question.html"));
 });
 
-app.get("/begin-game", (req, res) => {
+app.get("/begin-game", ensureAuthenticated, (req, res) => {
   res.sendFile(join(__dirname, "begin-game.html"));
 });
 
-app.get("/game-sessions", (req, res) => {
+app.get("/admin", ensureAuthenticated, (req, res) => {
   res.sendFile(join(__dirname, "game-sessions.html"));
 });
 
@@ -89,7 +185,7 @@ app.get("/api/game-sessions", async (req, res) => {
   }
 });
 
-app.get("/create-questions", (req, res) => {
+app.get("/create-questions",  ensureAuthenticated, (req, res) => {
   // Check if there is a gameSessionId provided
   const { gameSessionId } = req.query;
 

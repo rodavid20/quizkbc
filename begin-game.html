@@ -23,16 +23,23 @@
       <h1 class="mb-4">
         Game Controller
         <button
-          class="btn btn-primary mb-3 float-end"
-          onclick="window.location.href = '/game-sessions'"
+          class="btn btn-primary mb-3 ms-2 float-end"
+          onclick="window.location.href = '/admin'"
         >
         Back to Game Sessions
+        </button>
+        <button
+          class="btn btn-secondary mb-3 ms-2 float-end"
+          onclick="window.location.href = '/results'"
+        >
+        Results
         </button>
       </h1>
       <div id="divGame" style="display: none" class="card card-body">
         <h3 id="gameName">Game Name</h3>
         <form id="form" action="">
           <button id="btnStart" class="btn btn-primary">Start Game</button>
+          
         </form>
         <h2><div class="timer" id="timer">00:00</div></h2>
         <div class="row">
