@@ -3,7 +3,7 @@ const { Sequelize, DataTypes, Model } = require("sequelize");
 //const sequelize = new Sequelize('postgres://user:pass@example.com:5432/dbname') // Example for postgres
 const sequelize = new Sequelize({
   dialect: "sqlite",
-  storage: "quiz.db",
+  storage: global.port == 3000 ? "quiz3000.db" : "quiz.db",
   logging: false,
 });
 

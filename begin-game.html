@@ -123,20 +123,22 @@
       });
 
       socket.on("connected_users", (connectedUsers) => {
-        //display connected users as table
+        connected.innerHTML = "";
+        connectedUsers.sort();
         const table = document.createElement("table");
         table.setAttribute("class", "table table-striped");
         table.setAttribute("border", "1");
         const header = table.createTHead();
         const headerRow = header.insertRow(0);
         const headerCell1 = headerRow.insertCell(0);
-        headerCell1.innerHTML = "<b>Connected Users</b>";
+        headerCell1.innerHTML = `<b>${connectedUsers.filter((user) => user !== "" && user !== null).length} users connected</b>`;
         for (let i = 0; i < connectedUsers.length; i++) {
+          if(connectedUsers[i] === "" || connectedUsers[i] === null) continue;  
           const row = table.insertRow(i + 1);
           const cell1 = row.insertCell(0);
           cell1.textContent = connectedUsers[i];
+          console.log (connectedUsers[i]);
         }
-        connected.innerHTML = "";
         connected.appendChild(table);
       });
 

@@ -249,6 +249,7 @@
       
       function stopTimer() {
         clearInterval(timerInterval);
+        timerDiv.innerHTML = formatTime(0);        
         timerDiv.classList.remove('red');
         timerDiv.classList.remove('orange');
       }

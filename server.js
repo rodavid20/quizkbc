@@ -3,6 +3,11 @@ const fs = require("fs");
 const { createServer } = require("node:http");
 const { join } = require("node:path");
 const { Server } = require("socket.io");
+
+const port = process.env.PORT || 3000;
+//const port = process.argv[2] || 443;
+global.port = port;
+
 const { sequelize, GameSession, Question, PlayerSession } = require("./models");
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
@@ -64,8 +69,6 @@ const io = new Server(server, {
   transports: ["websocket"],
 });
 
-const port = process.env.PORT || 3000;
-//const port = process.env.PORT || 443;
 const path = require("path");
 
 let connectedUsers = [];
@@ -77,23 +80,8 @@ const timeLimit = 20;
 
 app.use("/static", express.static(path.join(__dirname, "public")));
 
-// Route for the login page
-app.get('/login', (req, res) => {
-  res.send(`
-    <form action="/login" method="post">
-      <div>
-        <label>Username:</label>
-        <input type="text" name="username"/>
-      </div>
-      <div>
-        <label>Password:</label>
-        <input type="password" name="password"/>
-      </div>
-      <div>
-        <input type="submit" value="Log In"/>
-      </div>
-    </form>
-  `);
+app.get("/login", (req, res) => {
+  res.sendFile(join(__dirname, "login.html"));
 });
 
 app.post('/login',
@@ -134,7 +122,7 @@ app.get("/game", (req, res) => {
   res.sendFile(join(__dirname, "game.html"));
 });
 
-app.get("/results", ensureAuthenticated, (req, res) => {
+app.get("/results", (req, res) => {
   res.sendFile(join(__dirname, "results.html"));
 });
 
@@ -244,7 +232,7 @@ app.get("/api/copy-questions", async (req, res) => {
 
 app.get("/api/questions/:gameSessionId", async (req, res) => {
   const { gameSessionId } = req.params;
-  console.log("Fetching questions for game session:", gameSessionId);
+  //console.log("Fetching questions for game session:", gameSessionId);
   try {
     const gameSession = await GameSession.findByPk(gameSessionId, {
       attributes: ["startTime", "name"],
@@ -319,9 +307,9 @@ app.post("/api/create-questions", async (req, res) => {
 io.on("connection", (socket) => {
   connectedUsers.push(socket.handshake.auth.username);
   io.emit("connected_users", connectedUsers);
-  console.log("a user connected");
+  //console.log("a user connected");
   socket.on("disconnect", () => {
-    console.log("user disconnected");
+    //console.log("user disconnected");
     connectedUsers = connectedUsers.filter(
       (user) => user !== socket.handshake.auth.username
     );
@@ -385,9 +373,9 @@ server.listen(port, async () => {
   console.log(`server running at port ${port}`);
   try {
     await sequelize.authenticate();
-    console.log("Database connected!");
+    //console.log("Database connected!");
     await sequelize.sync({ force: false, alter: false }); // Optionally, consider 'alter: true' if you want to make non-destructive updates to the schema
-    console.log("Database models synchronized!");
+    //console.log("Database models synchronized!");
   } catch (error) {
     console.error("Unable to connect to the database:", error);
   }
