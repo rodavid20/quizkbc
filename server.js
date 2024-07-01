@@ -193,6 +193,39 @@ app.get("/create-questions",  ensureAuthenticated, (req, res) => {
   }
 });
 
+app.get("/api/results", async (req, res) => {
+  //console.log("Fetching questions for game session:", serverGameData.gameSessionId);
+  try {
+    if (serverGameData == null || serverGameData.gameSessionId == null) {
+      return res.json({});
+    }
+    const gameSession = await GameSession.findByPk(serverGameData.gameSessionId, {
+      attributes: ["startTime", "name"],
+      include: [
+        {
+          model: PlayerSession,
+          attributes: [
+            "playerName",
+            "choice",
+            "score",
+            "clientTime",
+            "serverTime",
+          ],
+        },
+      ],
+    });
+    if (gameSession) {
+      //console.log("Questions:", gameSession);
+      res.json(gameSession);
+    } else {
+      res.json({});
+    }
+  } catch (error) {
+    console.error("Failed to fetch results:", error);
+    res.status(500).send("Failed to fetch results");
+  }
+});
+
 app.get("/api/copy-questions", async (req, res) => {
   const { gameSessionId } = req.query;
   try {
@@ -329,6 +362,9 @@ io.on("connection", (socket) => {
   });
 
   socket.on("submit_result", async (result) => {
+    if(serverGameData == null) return;
+    if(result == null) return;
+    if(result.gameSessionId != serverGameData.gameSessionId) return; //ignore results from other games
     const serverTime = (new Date().getTime() - serverStartTime) / 1000;
     result.serverTime = serverTime;
     try {

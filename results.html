@@ -23,7 +23,7 @@
       }
       .container {
         padding: 20px;
-        margin-top: 200px;
+        margin-top: 180px;
       }
       .row {
         transform: translate(50px, 0px);
@@ -62,8 +62,6 @@
     </style>
   </head>
   <body>
-    <input type="hidden" id="gameSessionId" name="gameSessionId" />
-
     <div class="container">
       <div class="row">
         <div class="col-6">
@@ -127,33 +125,68 @@
           </div>
         </div>
       </div>
+      <div class="row">
+        <div class="col-12 text-end" id="gameSessionName"></div>
+      </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
+      let gettingResults = false;
       let results = [];
       const socket = io({ transports: ["websocket"], upgrade: false });
-      const gameSessionId = new URLSearchParams(window.location.search).get(
-        "gameSessionId"
-      );
-      document.getElementById("gameSessionId").value = gameSessionId;
-      //console.log("gameSessionId:", gameSessionId);
+      getResults();
+
       socket.on("recieved_result", function (result) {
-        results.push(result);
-        results.sort((a, b) => {
-          if (a.score === b.score) {
-            return a.clientTime - b.clientTime;
-          }
-          return b.score - a.score;
-        });
-        for (let i = 0; i < results.length && i < 10; i++) {
-          document.getElementById("name" + (i + 1)).textContent =
-            results[i].username;
+        getResults();
+      });
+
+      function getResults() {
+        if (gettingResults) {
+          return;
         }
-        for (let i = results.length; i < 10; i++) {
+        results = [];
+        gettingResults = true;
+        fetch(`/api/results`)
+          .then((response) => response.json())
+          .then((session) => {
+            if (session) {
+              document.getElementById("gameSessionName").textContent =
+                session.name;
+              if (session.PlayerSessions.length > 0) {
+                results = session.PlayerSessions.sort((a, b) => {
+                  if (a.score === b.score) {
+                    return a.clientTime - b.clientTime;
+                  }
+                  return b.score - a.score;
+                });
+                for (let i = 0; i < results.length && i < 10; i++) {
+                  document.getElementById("name" + (i + 1)).textContent =
+                    results[i].playerName;
+                }
+                for (let i = results.length; i < 10; i++) {
+                  document.getElementById("name" + (i + 1)).textContent = "";
+                }
+                gettingResults = false;
+              } else {
+                showBlank();
+              }              
+            } else {
+              showBlank();
+            }
+          })
+          .catch((error) => {
+            console.error("Error loading questions:", error);
+            showBlank(); // Load blank forms on error
+          });
+      }
+
+      function showBlank() {
+        for (let i = 0; i < 10; i++) {
           document.getElementById("name" + (i + 1)).textContent = "";
         }
-      });
+        gettingResults = false;
+      }
     </script>
   </body>
 </html>
