@@ -17,10 +17,15 @@ kill -9 <PID>
 to start code
 tmux
 tmux attach
-ctrl+B d detach
 
+To Detach
+ctrl+B d 
+
+To view all tmux session
 tmux ls
 tmux attach-session -d -t <session id> 
+
+To start server
 npm run start 3000
 npm run start
 
