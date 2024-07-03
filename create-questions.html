@@ -12,6 +12,24 @@
   <body class="bg-light">
     <div class="container my-5">
       <h1 id="headerTitle"></h1>
+      <button type="button" class="btn btn-secondary mb-3" onclick="toggleBulkInput()">
+        Show/Hide Bulk Input
+      </button>      
+      <div id="bulkInputSection" class="mb-3" style="display: none;">
+        <label for="bulkInput" class="form-label"><b>Bulk Input:</b></label>
+        <textarea
+          id="bulkInput"
+          class="form-control"
+          rows="5"
+          placeholder="Enter questions and options separated by newlines and tabs"
+        ></textarea>
+        <button type="button" class="btn btn-primary mt-2" onclick="processBulkInput()">
+          Process Bulk Input
+        </button>
+        <button type="button" class="btn btn-secondary mt-2" onclick="generateBulkInput()">
+          Generate Bulk Input
+        </button>
+      </div>
       <form id="questionsForm" class="card card-body">
         <input type="hidden" id="gameSessionId" name="gameSessionId" />
         <div class="mb-3">
@@ -130,6 +148,44 @@
         for (let i = 0; i < numQuestions; i++) {
           appendQuestionForm(undefined, i);
         }
+      }
+      
+      function toggleBulkInput() {
+        const bulkInputSection = document.getElementById('bulkInputSection');
+        if (bulkInputSection.style.display === 'none' || bulkInputSection.style.display === '') {
+          bulkInputSection.style.display = 'block';
+        } else {
+          bulkInputSection.style.display = 'none';
+        }
+      }
+
+      function processBulkInput() {
+        const bulkInput = document.getElementById('bulkInput').value;
+        const lines = bulkInput.split('\n');
+        console.log('lines:', lines); 
+        lines.forEach((line, index) => {
+          const parts = line.split('\t');
+          console.log('parts:', parts);
+          if (parts.length >= 5 && index < numQuestions) {
+            document.getElementById(`question${index}`).value = parts[0];
+            for (let j = 0; j < 4; j++) {
+              document.getElementById(`option${j + 1}_q${index}`).value = parts[j + 1];
+            }
+          }
+        });
+      }
+
+      function generateBulkInput() {
+        let bulkInput = '';
+        for (let i = 0; i < numQuestions; i++) {
+          const questionText = document.getElementById(`question${i}`).value;
+          let options = [];
+          for (let j = 0; j < 4; j++) {
+            options.push(document.getElementById(`option${j + 1}_q${i}`).value);
+          }
+          bulkInput += `${questionText}\t${options.join('\t')}\n`;
+        }
+        document.getElementById('bulkInput').value = bulkInput.trim();
       }
 
       function submitForm() {

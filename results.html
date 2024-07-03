@@ -138,7 +138,8 @@
       getResults();
 
       socket.on("recieved_result", function (result) {
-        getResults();
+        getResults();        
+
       });
 
       function getResults() {
@@ -153,7 +154,7 @@
             if (session) {
               document.getElementById("gameSessionName").textContent =
                 session.name;
-              if (session.PlayerSessions.length > 0) {
+              if (session.PlayerSessions && session.PlayerSessions.length > 0) {
                 results = session.PlayerSessions.sort((a, b) => {
                   if (a.score === b.score) {
                     return a.clientTime - b.clientTime;
