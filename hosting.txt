@@ -6,6 +6,7 @@ sudo /usr/local/lsws/admin/misc/admpass.sh
 
 sudo ufw allow 80/tcp
 sudo ufw allow 443/tcp
+sudo ufw allow 3000/tcp
 
 To Stop litespeed server
 service lsws stop
