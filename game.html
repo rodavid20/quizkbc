@@ -95,8 +95,8 @@
 
       <h3 style="font-weight: bolder" id="userName">TEAM NAME</h3>
       <h6 id="gameSessionName">ROUND NAME</h6>
-      <h2><div class="timer" id="timer">00:00</div></h2>
-      <h4 style="color: lightgray" id="messages">Please Wait...</h4>
+      <h2><div class="timer" id="timer">The quiz will start any moment now</div></h2>
+      <h4 style="color: lightgray" id="messages">Please keep this tab open and do not minimize it</h4>
       <div id="questionAnswers" class="questionContainer" style="display:none;">
         <div id="question" class="question">         
         </div>
@@ -198,6 +198,7 @@
           messagesDiv.textContent = "Submitting answers...";
           //console.log(result);
           socket.volatile.emit("submit_result", result);
+          messagesDiv.textContent = "Answers Submitted";
         } else {
           currentQuestion++;
           displayQuestion();

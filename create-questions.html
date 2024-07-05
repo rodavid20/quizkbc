@@ -162,10 +162,10 @@
       function processBulkInput() {
         const bulkInput = document.getElementById('bulkInput').value;
         const lines = bulkInput.split('\n');
-        console.log('lines:', lines); 
+        //console.log('lines:', lines); 
         lines.forEach((line, index) => {
           const parts = line.split('\t');
-          console.log('parts:', parts);
+          //console.log('parts:', parts);
           if (parts.length >= 5 && index < numQuestions) {
             document.getElementById(`question${index}`).value = parts[0];
             for (let j = 0; j < 4; j++) {
@@ -173,6 +173,7 @@
             }
           }
         });
+        document.getElementById('bulkInput').value = '';        
       }
 
       function generateBulkInput() {
