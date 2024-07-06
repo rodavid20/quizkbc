@@ -29,6 +29,9 @@ To start server
 npm run start 3000
 npm run start
 
+or 
+npm run startOnUbuntu
+
 Client
 ip/client
 Admin

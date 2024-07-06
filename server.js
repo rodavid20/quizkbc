@@ -74,9 +74,9 @@ const path = require("path");
 let connectedUsers = [];
 let serverStartTime; //only one game at a time
 let serverGameData = {};
-const warningThreshold = 10;
-const alertThreshold = 5;
-const timeLimit = 20;
+const warningThreshold = 30;
+const alertThreshold = 10;
+const timeLimit = 120;
 
 app.use("/static", express.static(path.join(__dirname, "public")));
 
