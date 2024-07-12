@@ -128,6 +128,7 @@
       let timeLimit;  
 
       const timerDiv = document.getElementById("timer");
+      
       const usernameDiv = document.getElementById("userName");
       const questionAnswersDiv = document.getElementById("questionAnswers");
       const btnSubmit = document.getElementById("btnSubmit");
@@ -146,6 +147,7 @@
         userName = localStorage.getItem("username");
         usernameDiv.textContent = userName;
         result.username = userName;
+        //
         result.answers = [];
         result.gameSessionId = "";
         questionAnswersDiv.style.display = "none";

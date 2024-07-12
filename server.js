@@ -45,8 +45,9 @@ app.use(passport.session());
 
 // Configure the local strategy for use by Passport
 passport.use(new LocalStrategy((username, password, done) => {
-  // Replace this with your user authentication logic
-  if (username === 'kevin' && password === 'Kevin@123') {
+  //Replace this with your user authentication logic
+  console.log('Authenticating user:', process.env.ADMIN_USERNAME);
+  if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
     return done(null, { id: 1, username: 'user' });
   }
   return done(null, false, { message: 'Invalid credentials' });

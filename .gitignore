@@ -1,3 +1,5 @@
 node_modules
 quiz.db
 quiz3000.db
+config/dev.env
+config/prod.env

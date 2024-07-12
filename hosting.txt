@@ -14,6 +14,10 @@ service lsws stop
 sudo lsof -i :3000
 kill -9 <PID>
 
+create a folder config and create a prod.env file
+ADMIN_USERNAME=
+ADMIN_PASSWORD=
+
 to start code
 tmux
 tmux attach
@@ -26,11 +30,11 @@ tmux ls
 tmux attach-session -d -t <session id> 
 
 To start server
-npm run start 3000
-npm run start
+npm run prod 3000
+npm run prod
 
 or 
-npm run startOnUbuntu
+npm run prodOnUbuntu
 
 Client
 ip/client
